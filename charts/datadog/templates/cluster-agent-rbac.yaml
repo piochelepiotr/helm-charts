@@ -498,6 +498,43 @@ subjects:
     name: {{ template "datadog.fullname" . }}-cluster-agent
     namespace: {{ .Release.Namespace }}
 {{- end }}
+{{- if and .Values.clusterAgent.admissionController.enabled .Values.clusterAgent.admissionController.probe.enabled }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.clusterAgent.admissionController.probe.namespace }}
+  labels:
+{{ include "datadog.labels" . | indent 4 }}
+---
+apiVersion: {{ template "rbac.apiVersion" . }}
+kind: Role
+metadata:
+  labels:
+{{ include "datadog.labels" . | indent 4 }}
+  name: {{ template "datadog.fullname" . }}-cluster-agent-probe
+  namespace: {{ .Values.clusterAgent.admissionController.probe.namespace }}
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["create"]
+---
+apiVersion: {{ template "rbac.apiVersion" . }}
+kind: RoleBinding
+metadata:
+  labels:
+{{ include "datadog.labels" . | indent 4 }}
+  name: {{ template "datadog.fullname" . }}-cluster-agent-probe
+  namespace: {{ .Values.clusterAgent.admissionController.probe.namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ template "datadog.fullname" . }}-cluster-agent-probe
+subjects:
+  - kind: ServiceAccount
+    name: {{ template "datadog.fullname" . }}-cluster-agent
+    namespace: {{ .Release.Namespace }}
+{{- end }}
 {{- if .Values.clusterAgent.privateActionRunner.enabled }}
 ---
 apiVersion: {{ template "rbac.apiVersion" . }}
